@@ -4,13 +4,30 @@ from django.conf import settings
 from .models import CustomUser, OTP
 import random
 
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    
     email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = CustomUser
         fields = ('email', 'password')
+
+    def _generate_otp_code(self):
+        otp_code = f"{random.randint(100000, 999999)}"
+        while OTP.objects.filter(otp_code=otp_code).exists():
+            otp_code = f"{random.randint(100000, 999999)}"
+        return otp_code
+    
+    def _send_otp_email(self, email, otp_code, subject="Verify your account"):
+        send_mail(
+            subject=subject,
+            message=f"Your OTP code is: {otp_code}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False
+        )
 
     def create(self, validated_data):
         email = validated_data['email']
@@ -25,26 +42,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             username=email, email=email, password=password, is_email_verified=False
         )
 
-        otp_code = f"{random.randint(100000, 999999)}"
-        while OTP.objects.filter(otp_code=otp_code).exists():
-            otp_code = f"{random.randint(100000, 999999)}"
-
+        otp_code = self._generate_otp_code()
         otp = OTP.objects.create(user=user, otp_code=otp_code)
-
-        send_mail(
-            subject="Verify your account",
-            message=f"Your OTP code is: {otp_code}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False
-        )
+        self._send_otp_email(email, otp_code)
 
         return user
 
     def to_representation(self, instance):
         return {"email": instance.email, "message": "OTP sent to email for verification"}
 
+
 class VerifyOTPSerializer(serializers.Serializer):
+ 
     email = serializers.EmailField()
     otp_code = serializers.CharField()
 
@@ -83,25 +92,8 @@ class VerifyOTPSerializer(serializers.Serializer):
     
     
 class RefreshOTPSerializer(serializers.Serializer):
+
     email = serializers.EmailField()
-
-    def create_otp(self, user):
-        from random import randint
-
-        otp_code = f"{randint(100000, 999999)}"
-        while OTP.objects.filter(otp_code=otp_code).exists():
-            otp_code = f"{randint(100000, 999999)}"
-
-        return OTP.objects.create(user=user, otp_code=otp_code)
-
-    def send_otp_email(self, user, otp_code):
-        send_mail(
-            subject="Your New OTP Code",
-            message=f"Here is your new OTP code: {otp_code}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False
-        )
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -116,10 +108,17 @@ class RefreshOTPSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         user = validated_data['user']
-
+        
         OTP.objects.filter(user=user, is_used=False).update(is_used=True)
 
-        new_otp = self.create_otp(user)
-        self.send_otp_email(user, new_otp.otp_code)
+        registration_serializer = UserRegistrationSerializer()
+        otp_code = registration_serializer._generate_otp_code()
+        new_otp = OTP.objects.create(user=user, otp_code=otp_code)
+        
+        registration_serializer._send_otp_email(
+            user.email, 
+            otp_code, 
+            subject="Your New OTP Code"
+        )
 
         return new_otp

@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "authentication",
     "jobs",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -106,3 +107,8 @@ else:
     EMAIL_HOST_USER = os.getenv("SMTP_USER")
     EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASS")
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "True") == "True"
+CELERY_TASK_EAGER_PROPAGATES = True
