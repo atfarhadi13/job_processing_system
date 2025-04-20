@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.utils import timezone
 
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -40,9 +41,8 @@ class JobViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        job = serializer.save()
-        eta = job.scheduled_time + timedelta(seconds=1)
-        execute_job.apply_async(args=[job.id], eta=eta)
+        job = serializer.save(user=self.request.user)
+        execute_job.delay(job.id)
 
     def destroy(self, request, *args, **kwargs):
         job = self.get_object()
@@ -52,7 +52,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         job.status = "failed"
-        job.save()
+        job.save(update_fields=["status"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

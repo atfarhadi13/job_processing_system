@@ -22,7 +22,6 @@ class JobApiTests(APITestCase):
         self.jobs_url = reverse('jobs:job-list')
         self.summary_url = reverse('jobs:job-summary')
         
-        # Prepare test data
         self.future_time = timezone.now() + timedelta(minutes=5)
         self.valid_job_data = {
             "name": "Test Job",
@@ -98,17 +97,14 @@ class JobApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_job_summary(self):
-        # Create jobs with different statuses
         Job.objects.create(user=self.user, name="Job 1", scheduled_time=self.future_time, status="pending")
         Job.objects.create(user=self.user, name="Job 2", scheduled_time=self.future_time, status="in-progress")
         Job.objects.create(user=self.user, name="Job 3", scheduled_time=self.future_time, status="completed")
         Job.objects.create(user=self.user, name="Job 4", scheduled_time=self.future_time, status="completed")
-        
-        # Get summary
+
         response = self.client.get(self.summary_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # Check counts
         self.assertEqual(response.data["pending"], 1)
         self.assertEqual(response.data["in-progress"], 1)
         self.assertEqual(response.data["completed"], 2)
