@@ -77,7 +77,7 @@ python manage.py test
 - Django Celery Beat (optional for scheduling)
 
 ## Author
-Your Name Here
+Ali Tareq Farhadi
 
 ## License
 [MIT License](LICENSE.md)

@@ -1,4 +1,3 @@
-# authentication/serializers.py
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -19,7 +18,6 @@ def _send_otp_email(email: str, otp_code: str) -> None:
 
 
 def _create_and_email_otp(user: User) -> OTPVerification:
-    # mark any previous codes as used
     OTPVerification.objects.filter(user=user, is_used=False).update(is_used=True)
     otp = OTPVerification.objects.create(user=user)
     _send_otp_email(user.email, otp.otp_code)

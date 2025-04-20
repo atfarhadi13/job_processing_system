@@ -11,7 +11,6 @@ from authentication.models import CustomUser
 
 class JobApiTests(APITestCase):
     def setUp(self):
-        # Create and authenticate a verified user
         self.user = CustomUser.objects.create_user(
             username="test@example.com",
             email="test@example.com", 
@@ -20,7 +19,6 @@ class JobApiTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         
-        # Create API URLs
         self.jobs_url = reverse('jobs:job-list')
         self.summary_url = reverse('jobs:job-summary')
         

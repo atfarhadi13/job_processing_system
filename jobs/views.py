@@ -27,7 +27,6 @@ class JobViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
     http_method_names = ["get", "post", "delete"]
 
-    # filtering / ordering
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ["status"]
     ordering_fields = ["scheduled_time", "created_at"]

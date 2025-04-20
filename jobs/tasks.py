@@ -1,4 +1,3 @@
-# jobs/tasks.py  ───────────────────────────────────────────────
 import logging
 import time
 import traceback
