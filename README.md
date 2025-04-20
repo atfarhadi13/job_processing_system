@@ -58,8 +58,14 @@ python manage.py runserver
 
 Make sure Redis is running, then:
 
+#### For Windows:
 ```bash
-celery -A job_processing_system worker --beat --scheduler django --loglevel=info
+start_celery.bat
+```
+
+#### For Linux/macOS:
+```bash
+celery -A job_processing_system worker --loglevel=info
 ```
 
 ## Testing
