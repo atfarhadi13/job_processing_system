@@ -33,12 +33,12 @@ This project implements a REST API for managing asynchronous job processing with
 
 ### Installation
 ```bash
-git clone <repository-url>
+git clone https://github.com/atfarhadi13/job_processing_system.git
 cd job_processing_system
 
 # Create virtual environment
-python -m venv env
-source env/bin/activate
+python -m venv venv
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
