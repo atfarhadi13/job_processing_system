@@ -1,83 +1,62 @@
-from rest_framework.views import APIView
+from rest_framework import permissions, status
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from django.contrib.auth import authenticate
-from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .serializers import (
-    UserRegistrationSerializer,
+    RegistrationSerializer,
     VerifyOTPSerializer,
-    RefreshOTPSerializer
+    RefreshOTPSerializer,
 )
+from .models import CustomUser
 
 
-class UserRegistrationView(APIView):
+# ─────────────  Registration / OTP endpoints  ────────────────
+class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        ser = RegistrationSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
-        serializer = VerifyOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({
-                "message": "Email successfully verified.",
-                "token": token.key
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        ser = VerifyOTPSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response({"detail": "OTP verified."}, status=status.HTTP_200_OK)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RefreshOTPView(APIView):
     permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = RefreshOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "New OTP has been sent to your email."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
-class UserLoginView(APIView):
+    def post(self, request):
+        ser = RefreshOTPSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response({"detail": "New OTP sent."}, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─────────────  JWT login (email verified only)  ──────────────
+class EmailVerifiedTokenSerializer(TokenObtainPairSerializer):
+    username_field = "email"
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if not self.user.is_email_verified:
+            raise permissions.PermissionDenied("Email is not verified.")
+        return data
+
+
+class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        if not email or not password:
-            return Response(
-                {"error": "Email and password are required."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = authenticate(request, username=email, password=password)
-
-        if user is None:
-            return Response(
-                {"error": "Invalid credentials."}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        if not user.is_email_verified:
-            return Response(
-                {
-                    "error": "Email is not verified.",
-                    "detail": "Please verify your email first."
-                }, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-            
-        token, _ = Token.objects.get_or_create(user=user)
-
-        return Response({"token": token.key}, status=status.HTTP_200_OK)
+    serializer_class = EmailVerifiedTokenSerializer
