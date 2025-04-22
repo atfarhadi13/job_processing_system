@@ -4,12 +4,12 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status, viewsets, exceptions
-from rest_framework.filters import OrderingFilter
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Job, JobResult
 from .serializers import JobSerializer, JobResultSerializer
-from .tasks import process_job
+from .tasks import start_job, complete_job, cancel_job
 
 
 class IsEmailVerified(permissions.BasePermission):
@@ -29,7 +29,24 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         job = serializer.save()
-        process_job.delay(job.id)
+        start_job.delay(job.id)
+
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        print(f"Completing job {pk}")
+        complete_job.delay(pk)
+        return Response(
+            {"detail": "Completion requested."},
+            status=status.HTTP_202_ACCEPTED
+        )
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        cancel_job.delay(pk)
+        return Response(
+            {"detail": "Cancellation requested."},
+            status=status.HTTP_202_ACCEPTED
+        )
 
 
 class JobResultView(generics.RetrieveAPIView):

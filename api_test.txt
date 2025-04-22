@@ -1,0 +1,66 @@
+POST
+http://127.0.0.1:8000/api/jobs/
+Authorization Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MDAzMDUxLCJpYXQiOjE3NDUxMzkwNTEsImp0aSI6IjU5YTU3YmNhZWY4ZDQyYWJhMmIwNjkwNTM5YjljZDY4IiwidXNlcl9pZCI6Mn0.CZkeYKvTsaUqh13fbmshympcmuOXvFk-g94zakrnelw
+Content-Type application/json
+
+{
+    "name": "Test1 Job",
+    "description": "This is a test job1",
+    "scheduled_time": "2025-04-22T13:50:00Z"
+}
+
+POST
+http://127.0.0.1:8000/api/jobs/57/complete/
+Authorization
+
+
+POST
+http://127.0.0.1:8000/api/jobs/58/cancel/
+Authorization
+
+GET
+http://127.0.0.1:8000/api/jobs/?status=pending
+Authorization
+
+
+GET
+http://127.0.0.1:8000/api/jobs/?ordering=created_at
+Authorization
+
+
+GET
+http://127.0.0.1:8000/api/jobs/?ordering=scheduled_time
+Authorization
+
+GET
+http://127.0.0.1:8000/api/jobs/57/result/
+Authorization
+
+POST
+http://127.0.0.1:8000/api/login/
+Content-Type application/json
+{
+    "email": "alifarhadi8513@gmail.com",
+    "password":"cout@Ali123"
+}
+
+POST
+http://127.0.0.1:8000/api/verify-email/
+Content-Type application/json
+{
+    "email": "alifarhadi8513@gmail.com",
+    "otp_code":"630911"
+}
+
+
+POST
+http://127.0.0.1:8000/api/register/
+Content-Type application/json
+{
+    "email": "alifarhadi8513@gmail.com",
+    "password": "cout@Ali123"
+}
+
+GET
+http://127.0.0.1:8000/api/jobs/summary/
+Authorization
