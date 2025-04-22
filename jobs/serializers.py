@@ -30,8 +30,9 @@ class JobSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at", "status")
 
     def validate_scheduled_time(self, value):
-        if value <= timezone.now():
+        now = timezone.now()
+        if value <= now:
             raise serializers.ValidationError(
-                "Scheduled time must be in the future."
+                f"Scheduled time ({value}) must be in the future. Current time is {now}."
             )
         return value

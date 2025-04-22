@@ -27,8 +27,8 @@ class AuthFlowTests(APITestCase):
 
         user = CustomUser.objects.get(email=self.valid_user_data["email"])
         self.assertFalse(user.is_email_verified)
+        
         otp = OTP.objects.get(user=user)
-     
         verify_data = {
             "email": user.email,
             "otp_code": otp.otp_code
@@ -70,9 +70,22 @@ class AuthFlowTests(APITestCase):
         self.assertNotEqual(original_otp.otp_code, new_otp.otp_code)
     
     def test_login_without_verification(self):
-
         self.client.post(self.register_url, self.valid_user_data)
 
         response = self.client.post(self.login_url, self.valid_user_data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("error", response.data)
+        
+    def test_verify_with_invalid_otp(self):
+        self.client.post(self.register_url, self.valid_user_data)
+        user = CustomUser.objects.get(email=self.valid_user_data["email"])
+        
+        verify_data = {
+            "email": user.email,
+            "otp_code": "999999"
+        }
+        response = self.client.post(self.verify_url, verify_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        user.refresh_from_db()
+        self.assertFalse(user.is_email_verified)

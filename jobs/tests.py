@@ -41,13 +41,40 @@ class JobApiTests(APITestCase):
         
         job = Job.objects.get(id=job_id)
         self.assertEqual(job.status, "pending")
-        
-        cancel_url = reverse('jobs:job-detail', args=[job_id])
-        response = self.client.delete(cancel_url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        job.refresh_from_db()
-        self.assertEqual(job.status, "failed")
+        cancel_url = reverse('jobs:job-cancel', args=[job_id])
+        response = self.client.post(cancel_url)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+    @patch('jobs.tasks.cancel_job.delay')
+    def test_cancel_job_endpoint(self, mock_cancel_job):
+        job = Job.objects.create(
+            user=self.user, 
+            name="Job to Cancel", 
+            description="This job will be cancelled", 
+            scheduled_time=self.future_time,
+            status="pending"
+        )
+        
+        cancel_url = reverse('jobs:job-cancel', args=[job.id])
+        response = self.client.post(cancel_url)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        mock_cancel_job.assert_called_once_with(job.id)
+
+    @patch('jobs.tasks.complete_job.delay')
+    def test_complete_job_endpoint(self, mock_complete_job):
+        job = Job.objects.create(
+            user=self.user, 
+            name="Job to Complete", 
+            description="This job will be completed", 
+            scheduled_time=self.future_time,
+            status="in-progress"
+        )
+        
+        complete_url = reverse('jobs:job-complete', args=[job.id])
+        response = self.client.post(complete_url)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        mock_complete_job.assert_called_once_with(job.id)
 
     def test_past_time_rejected(self):
         past_data = {

@@ -19,11 +19,6 @@ def start_job(job_id):
 
 @shared_task(ignore_result=True)
 def complete_job(job_id):
-    """
-    1) Mark in-progress → completed
-    2) Write a JobResult
-    3) Remove from Redis
-    """
     job = Job.objects.get(pk=job_id)
     if state_cache.get(f"job:{job_id}") != 'in-progress':
         return
