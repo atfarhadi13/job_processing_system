@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .models import Job, JobResult
 from .serializers import JobSerializer, JobResultSerializer
-from .tasks import execute_job
+from .tasks import process_job
 
 
 class IsEmailVerified(permissions.BasePermission):
@@ -23,37 +23,13 @@ class IsEmailVerified(permissions.BasePermission):
 
 
 class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
     serializer_class = JobSerializer
-    permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
-    http_method_names = ["get", "post", "delete"]
-
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ["status"]
-    ordering_fields = ["scheduled_time", "created_at"]
-    ordering = ["-created_at"]
-
-    def get_queryset(self):
-        return (
-            Job.objects.filter(user=self.request.user)
-            .select_related("result")
-            .order_by(*self.ordering)
-        )
+    permission_classes = [IsEmailVerified]
 
     def perform_create(self, serializer):
         job = serializer.save()
-        eta = job.scheduled_time + timedelta(seconds=1)
-        execute_job.apply_async(args=[job.id], eta=eta)
-
-    def destroy(self, request, *args, **kwargs):
-        job = self.get_object()
-        if job.status != "pending":
-            return Response(
-                {"detail": "Only pending jobs can be cancelled."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        job.status = "failed"
-        job.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        process_job.delay(job.id)
 
 
 class JobResultView(generics.RetrieveAPIView):
