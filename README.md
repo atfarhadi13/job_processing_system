@@ -21,6 +21,8 @@ This project implements a REST API for managing asynchronous job processing with
 - `POST /api/jobs/` - Create a new job
 - `GET /api/jobs/<id>/` - Retrieve specific job details
 - `DELETE /api/jobs/<id>/` - Cancel a job
+- `PUT /api/jobs/<id>/cancel/` - Cancel a specific job
+- `PUT /api/jobs/<id>/complete/` - Mark a job as complete
 
 ### Job Results
 - `GET /api/jobs/<id>/result/` - Retrieve result of completed job
@@ -46,6 +48,7 @@ pip install -r requirements.txt
 
 ### Database Setup
 ```bash
+python manage.py makemigrations
 python manage.py migrate
 ```
 
@@ -58,14 +61,8 @@ python manage.py runserver
 
 Make sure Redis is running, then:
 
-#### For Windows:
 ```bash
-start_celery.bat
-```
-
-#### For Linux/macOS:
-```bash
-celery -A job_processing_system worker --loglevel=info
+celery -A job_processing_system worker --loglevel=info --pool=solo
 ```
 
 ## Testing

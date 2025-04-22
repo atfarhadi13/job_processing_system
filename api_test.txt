@@ -64,3 +64,11 @@ Content-Type application/json
 GET
 http://127.0.0.1:8000/api/jobs/summary/
 Authorization
+
+
+
+celery
+celery -A job_processing_system worker --loglevel=info --pool=solo
+
+django
+python manage.py runserver
